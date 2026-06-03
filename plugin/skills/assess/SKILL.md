@@ -1,6 +1,6 @@
 ---
 name: assess
-description: "Use when someone asks feasibility, effort, or possibility questions about the codebase — 'is it possible to', 'can we add', 'what's the effort for', 'how hard would it be'. Do NOT use for implementation requests — those use superpowers:brainstorming."
+description: "Use when someone asks a feasibility or effort question about a change that doesn't exist yet — 'is it possible to add', 'can we add', 'what's the effort for', 'how hard would it be', 'what would it take to'. Do NOT use for: implementing or designing something already decided (use superpowers:brainstorming); or factual questions about existing code ('where is X', 'does the system already do Y') — answer those directly without this skill."
 ---
 
 # Feasibility & Effort Assessment
@@ -19,14 +19,16 @@ Every assessment goes through the full clarification process. A simple field add
 
 ## Trigger Patterns
 
-Activate when the question is about understanding feasibility or effort, not about building:
-- "Is it possible to...", "Can we add...", "What's the effort for..."
-- "How hard would it be to...", "What would it take to..."
-- "Does the system support...", "Can the platform handle..."
+Activate when the question is about feasibility or effort of something not yet built, not about building it:
+- "Is it possible to add...", "Can we add...", "What's the effort for..."
+- "How hard would it be to...", "What would it take to...", "Roughly how long would..."
+- "Can the platform handle [a new capability]..."
 
 Do NOT activate for:
 - "Build X", "Implement X", "Let's do it" — use `superpowers:brainstorming`
-- "Where is X", "How does Y work" — answer directly, no skill needed
+- "Where is X", "How does Y work", "Does the system already do Z" — a factual question about existing code; answer directly, no skill needed
+- **Capability questions** ("does X support Y?") are ambiguous: if it already exists, answer in one line and stop; only assess when it does NOT exist and the user is implicitly asking what adding it would take. Bias to answer-directly unless a quick check can't tell.
+- **Already decided to build it** and wants design help ("we're adding X — how should we structure it?") — use `superpowers:brainstorming`. assess answers the pre-commit question; brainstorming owns design after the decision.
 
 ## Checklist
 
@@ -61,7 +63,8 @@ digraph assess {
 
 **Exploring the codebase (do this FIRST):**
 
-- Use the **Product Modules** table in `service/CLAUDE.md` to identify which services to check
+- Orient from `service/CLAUDE.md` — its **Directory Structure** tables (ECS services + Lambda functions) and **Technology Stack** section are your module map and data-layer guide. If your working directory is a subdirectory, search upward for the nearest `CLAUDE.md`.
+  - **If it's absent** (you may be on an older branch, or it isn't pulled): fall back to listing `service/*/` and `lambda/*/` to enumerate modules, and skim the relevant service's `README`/`package.json`. Tell the user `CLAUDE.md` wasn't found so they can check their branch — orientation is best-effort without it.
 - Check out the current project state first (relevant services, models, routes, recent commits)
 - Dispatch exploration subagents to the relevant service(s) to understand:
   - Does this feature or something similar already exist?
@@ -74,6 +77,8 @@ digraph assess {
 **Understanding the requirement:**
 
 - Before asking detailed questions, assess scope: if the request describes multiple independent features, flag this immediately. Don't spend questions refining details of a request that needs to be decomposed first.
+- **If it's multiple independent features:** after flagging it, offer a choice — (a) assess one feature in depth now via the full flow, or (b) give a one-line coarse band per feature to help sequence the work, then recommend an order. Be explicit that (b) is a sequencing aid, not a final assessment.
+- **If the user is comparing candidates** ("which of these is easiest/cheapest?") rather than refining one: ask only the 1-2 questions that change the *relative* ranking, give each a coarse band, and present a ranked table (candidate | effort | main cost driver | recommendation). Do the full 2-3-approaches treatment only if the top two are close.
 - Ask questions one at a time, informed by what you found in the codebase
 - Prefer multiple choice questions when possible — use codebase findings to shape choices (e.g., "Currently a contact has one assignee. Do you mean: a) multiple assignees, b) followers/watchers, c) something else?")
 - Only one question per message — if a topic needs more exploration, break it into multiple questions
@@ -108,6 +113,18 @@ Not every dimension applies to every question. Use judgment — but err on askin
 - **Large** (1-2 weeks): new subsystem, changes across 4+ services, new infrastructure
 - **Very large** (2+ weeks): architectural change, new service, cross-cutting concerns
 
+**Estimates cover the full delivery slice** — implementation + tests + migration/backfill + review + rollout, not just the code. Bump up a bucket (or widen the range) and name the trigger in Risks if any apply:
+- a large-table migration or data backfill
+- a queue / message-format change or replay
+- a contract / public-API change consumed by other services
+- a high-traffic or critical path (messaging, contacts, billing)
+- a **searchable/filterable field on a contact-like entity** — it touches the OpenSearch index, not just the table, so it's Medium even when the column change looks trivial
+- an unknown the codebase couldn't close (see below)
+
+The day ranges assume one engineer already familiar with the affected service — treat them as relative sizing, not a delivery commitment.
+
+**When an unknown blocks an honest estimate** — a vendor/API limit, an untested performance ceiling, behavior locked in a third-party SDK, a product/legal constraint — don't fabricate a number. Name the specific question that decides it and who/what could answer it, and give a conditional estimate ("Small if the channel API supports batch send, Large if we must paginate"). Recommending a spike as the next step is not implementation — it doesn't violate the hard gate.
+
 ## Presenting the Assessment
 
 Once the user picks an approach, present a structured summary:
@@ -121,7 +138,7 @@ Once the user picks an approach, present a structured summary:
 **What would need to change:**
 - Table of services and their specific changes
 
-**Effort estimate:** Small / Medium / Large / Very Large with breakdown
+**Effort estimate:** Small / Medium / Large / Very Large (or **Spike required**, with a conditional estimate), plus a breakdown and a **confidence level** (High / Medium / Low) tied to how much you verified in code vs assumed. For Low confidence, give a span across two buckets (e.g. "Medium-to-Large") instead of one.
 
 **Risks or complications:**
 - Non-obvious dependencies, migration concerns, performance implications
@@ -129,7 +146,7 @@ Once the user picks an approach, present a structured summary:
 
 ### Then stop.
 
-If the user wants to proceed to implementation, say: **"Want to design and implement this? Start with `superpowers:brainstorming` to create a full design."**
+If the user wants to proceed to implementation, say: **"Want to design and implement this? Start with `superpowers:brainstorming`."** Point it at the assessment above — the current state, the chosen approach, the services to touch, and the requirement you clarified answer brainstorming's explore-context and clarify steps, so it builds on this instead of re-exploring or re-asking from zero.
 
 ## Key Principles
 
