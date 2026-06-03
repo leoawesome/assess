@@ -23,7 +23,7 @@ It explores the relevant services, asks clarifying questions one at a time, prop
 
 ```
 /plugin marketplace add leoawesome/assess
-/plugin install assess@assess-marketplace
+/plugin install assess@assess
 /reload-plugins
 ```
 
