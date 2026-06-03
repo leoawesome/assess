@@ -1,0 +1,12 @@
+{
+  "name": "assess",
+  "description": "Feasibility and effort assessment skill — answers 'is it possible', 'what's the effort', 'how hard would it be' through codebase exploration, without designing or implementing",
+  "version": "1.0.0",
+  "author": {
+    "name": "leoawesome"
+  },
+  "homepage": "https://github.com/leoawesome/assess",
+  "repository": "https://github.com/leoawesome/assess",
+  "license": "MIT",
+  "keywords": ["skills", "assessment", "feasibility", "effort-estimation", "scoping"]
+}
