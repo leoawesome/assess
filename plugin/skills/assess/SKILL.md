@@ -72,6 +72,7 @@ digraph assess {
 
 **Exploring the codebase (do this FIRST):**
 
+- **Get on latest `master` before anything else.** A stale checkout makes assess answer from old code — saying something "doesn't exist yet" when it just merged. Run `git fetch origin`, then bring the repo current: if the working tree is clean, `git checkout master && git pull`; if there are uncommitted changes or you're on a feature branch with work, do **not** switch — note that the assessment reflects the current branch, not latest `master`, and say so in the output.
 - Orient from `service/CLAUDE.md` — its **Directory Structure** tables (ECS services + Lambda functions) and **Technology Stack** section are your module map and data-layer guide. If your working directory is a subdirectory, search upward for the nearest `CLAUDE.md`.
   - **If it's absent** (you may be on an older branch, or it isn't pulled): fall back to listing `service/*/` and `lambda/*/` to enumerate modules, and skim the relevant service's `README`/`package.json`. Tell the user `CLAUDE.md` wasn't found so they can check their branch — orientation is best-effort without it.
 - Check out the current project state first (relevant services, models, routes, recent commits)
