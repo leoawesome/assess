@@ -1,7 +1,7 @@
 {
   "name": "assess",
   "description": "Feasibility and effort assessment skill — answers 'is it possible', 'what's the effort', 'how hard would it be' through codebase exploration, without designing or implementing",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": {
     "name": "leoawesome"
   },

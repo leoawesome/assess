@@ -1,16 +1,16 @@
 ---
 name: assess
-description: "Use when someone asks a feasibility or effort question about a change that doesn't exist yet — 'is it possible to add', 'can we add', 'what's the effort for', 'how hard would it be', 'what would it take to'. Do NOT use for: implementing or designing something already decided (use superpowers:brainstorming); or factual questions about existing code ('where is X', 'does the system already do Y') — answer those directly without this skill."
+description: "Use when someone asks a feasibility or effort question about a change that doesn't exist yet — 'is it possible to add', 'can we add', 'what's the effort for', 'how hard would it be', 'what would it take to'. Do NOT use for: implementing or designing something already decided; or factual questions about existing code ('where is X', 'does the system already do Y') — answer those directly without this skill."
 ---
 
 # Feasibility & Effort Assessment
 
 Help answer feasibility and effort questions through natural collaborative dialogue.
 
-Start by understanding the current project context, then ask questions one at a time to refine what the user means. Once you understand the requirement, propose approaches with effort estimates and present a clear assessment. **Stop there — do not design or implement.**
+Start by understanding the current project context, then ask questions one at a time to refine what the user means. Once you understand the requirement, propose approaches with effort estimates and present a clear assessment. **Do not design or implement** — once the answer stands, offer to verify it with engineering.
 
 <HARD-GATE>
-Do NOT write code, create design docs, invoke implementation skills (writing-plans, executing-plans, brainstorming), or propose detailed technical designs. The terminal state is a summary assessment. If the user wants to proceed to implementation, tell them to use `superpowers:brainstorming`.
+Do NOT write code, create design docs, invoke planning or implementation skills, or propose detailed technical designs. The terminal state is a summary assessment followed by an offer to verify it with engineering — nothing past that. Never hand off to another skill to "proceed to implementation."
 </HARD-GATE>
 
 ## Anti-Pattern: "I Can Assess This After One Question"
@@ -25,10 +25,10 @@ Activate when the question is about feasibility or effort of something not yet b
 - "Can the platform handle [a new capability]..."
 
 Do NOT activate for:
-- "Build X", "Implement X", "Let's do it" — use `superpowers:brainstorming`
+- "Build X", "Implement X", "Let's do it" — an implementation request, not a feasibility question; don't assess
 - "Where is X", "How does Y work", "Does the system already do Z" — a factual question about existing code; answer directly, no skill needed
 - **Capability questions** ("does X support Y?") are ambiguous: if it already exists, answer in one line and stop; only assess when it does NOT exist and the user is implicitly asking what adding it would take. Bias to answer-directly unless a quick check can't tell.
-- **Already decided to build it** and wants design help ("we're adding X — how should we structure it?") — use `superpowers:brainstorming`. assess answers the pre-commit question; brainstorming owns design after the decision.
+- **Already decided to build it** and wants design help ("we're adding X — how should we structure it?") — that's a design request, not a feasibility question; don't assess. assess answers the pre-commit question, not how to build it.
 
 ## Checklist
 
@@ -37,7 +37,8 @@ You MUST create a task for each of these items and complete them in order:
 1. **Explore project context** — identify relevant services, explore models, routes, data structures
 2. **Ask clarifying questions** — one at a time, informed by codebase findings
 3. **Propose 2-3 approaches** — with trade-offs, effort estimates, and your recommendation
-4. **Present assessment** — structured summary with effort estimate, then stop
+4. **Present assessment** — structured summary with effort estimate
+5. **Offer to verify with engineering** — offer to post the question + answer to the Slack channel; if yes, post it. Terminal state.
 
 ## Process Flow
 
@@ -47,17 +48,25 @@ digraph assess {
     "Ask clarifying questions" [shape=box];
     "Propose 2-3 approaches" [shape=box];
     "User picks approach?" [shape=diamond];
-    "Present assessment" [shape=doublecircle];
+    "Present assessment" [shape=box];
+    "Offer to verify with engineering" [shape=box];
+    "User wants to verify?" [shape=diamond];
+    "Post question + answer to Slack" [shape=doublecircle];
+    "Done" [shape=doublecircle];
 
     "Explore project context" -> "Ask clarifying questions";
     "Ask clarifying questions" -> "Propose 2-3 approaches";
     "Propose 2-3 approaches" -> "User picks approach?";
     "User picks approach?" -> "Propose 2-3 approaches" [label="none fit, revise"];
     "User picks approach?" -> "Present assessment" [label="chosen"];
+    "Present assessment" -> "Offer to verify with engineering";
+    "Offer to verify with engineering" -> "User wants to verify?";
+    "User wants to verify?" -> "Post question + answer to Slack" [label="yes"];
+    "User wants to verify?" -> "Done" [label="no"];
 }
 ```
 
-**The terminal state is presenting the assessment.** Do NOT invoke writing-plans, brainstorming, or any implementation skill.
+**The terminal state is the verify offer** — present the assessment, then offer to verify it with engineering. Do NOT invoke any planning or implementation skill.
 
 ## The Process
 
@@ -144,9 +153,30 @@ Once the user picks an approach, present a structured summary:
 - Non-obvious dependencies, migration concerns, performance implications
 - **Verify before listing** — if a risk can be confirmed or ruled out by reading the code, do that before presenting the assessment. Do not list "need to verify X" as a risk when you can check X right now. Only list genuinely unknown risks that require runtime testing, production data, or human judgment to assess.
 
-### Then stop.
+### Then offer to verify with engineering.
 
-If the user wants to proceed to implementation, say: **"Want to design and implement this? Start with `superpowers:brainstorming`."** Point it at the assessment above — the current state, the chosen approach, the services to touch, and the requirement you clarified answer brainstorming's explore-context and clarify steps, so it builds on this instead of re-exploring or re-asking from zero.
+The answer you just gave is the skill's output — and it doesn't have to be an effort estimate. It might be a comparison, or a factual answer about what the platform does today ("what channels do we support?"). Whatever it is, offer to confirm it with the team:
+
+> "Want me to verify this with the developers? I'll post the question and this answer to the engineering Slack channel for confirmation."
+
+- **Declines** → stop. The answer stands as-is. Do NOT hand off to any other skill.
+- **Says yes** → post immediately (no draft preview) to Slack channel `C04LV6VME5U` using `mcp__slack__slack_post_message`. Send only what a developer needs to confirm or correct — the original question and the conclusion — not the clarifying back-and-forth. Then tell the user it's posted.
+
+**Message format** (Slack mrkdwn):
+
+```
+*Product question (via assess bot)*
+<the original question, verbatim or lightly cleaned up>
+
+*Assessed answer*
+<the conclusion — effort band + confidence + one-line scope, or the factual answer>
+
+Devs — please confirm or correct.
+```
+
+If `mcp__slack__slack_post_message` isn't available in this environment, say so and print the drafted message so the user can paste it manually.
+
+This is the terminal state. assess never proceeds past the verify offer to design or implementation.
 
 ## Key Principles
 
@@ -157,4 +187,4 @@ If the user wants to proceed to implementation, say: **"Want to design and imple
 - **Explore alternatives** — always propose 2-3 approaches before settling
 - **Incremental validation** — present approaches, get user's pick before final assessment
 - **Be flexible** — go back and clarify if something doesn't make sense
-- **Stop at assessment** — never proceed to implementation without explicit user request
+- **Stop at the verify offer** — the answer plus an offer to verify it with engineering is the end; never proceed to design or implementation
