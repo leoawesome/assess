@@ -167,7 +167,14 @@ The answer you just gave is the skill's output — and it doesn't have to be an 
 > "Want me to verify this with the developers? I'll post the question and this answer to the engineering Slack channel for confirmation."
 
 - **Declines** → stop. The answer stands as-is. Do NOT hand off to any other skill.
-- **Says yes** → post immediately (no draft preview) to Slack channel `C04LV6VME5U` using `mcp__slack__slack_post_message`. Send only what a developer needs to confirm or correct — the original question and the conclusion — not the clarifying back-and-forth. Then tell the user it's posted.
+- **Says yes** → post immediately (no draft preview), sending only what a developer needs to confirm or correct — the original question and the conclusion, not the clarifying back-and-forth. Then tell the user it's posted.
+
+**This step is capability-adaptive: detect the Slack poster you actually have at runtime — don't assume one.** Check your available tools and pick the first that exists, in this order:
+
+1. **Token-based Slack MCP** — a tool named like `mcp__slack__*` (e.g. `mcp__slack__slack_post_message`). Prefer this; it works headless / in the bot.
+2. **claude.ai Slack connector** — a tool named like `mcp__claude_ai_Slack__*`.
+
+Don't hard-code a server name — match whatever `mcp__…Slack…` posting tool is present. Post to the channel in env var `ASSESS_ENG_CHANNEL` if it's set, otherwise the default `C04LV6VME5U`.
 
 **Message format** (Slack mrkdwn):
 
@@ -181,7 +188,11 @@ The answer you just gave is the skill's output — and it doesn't have to be an 
 Devs — please confirm or correct.
 ```
 
-If `mcp__slack__slack_post_message` isn't available in this environment, say so and print the drafted message so the user can paste it manually.
+**If no Slack tool is available — or a Slack tool is present but the post fails** (e.g. `not_in_channel`, a permission error, or any API error) — do NOT error or stall. Skip/abandon the post and append a clearly-labeled section to your reply instead:
+
+> ⚠️ **Needs engineering confirmation**
+> <the same question + assessed answer you would have posted>
+> _Not auto-posted — no Slack tool was available, or the post failed. Please forward to engineering to confirm._
 
 This is the terminal state. assess never proceeds past the verify offer to design or implementation.
 
